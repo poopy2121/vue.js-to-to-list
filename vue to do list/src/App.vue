@@ -1,122 +1,138 @@
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue';
+import { ref, onMounted, computed, watch } from "vue";
 
 const todos = ref([]);
-const name = ref('');
-
-const input_content = ref('');
+const name = ref("");
+const input_content = ref("");
 const input_category = ref(null);
+const errorMessage = ref(""); // New ref for error messages
 
-const todos_asc = computed(() => todos.value.sort((a, b) => {
-  return b.createdAt - a.createdAt;
-}));
+const todos_asc = computed(() =>
+  todos.value.sort((a, b) => {
+    return b.createdAt - a.createdAt;
+  })
+);
 
 const addTodo = () => {
-  if (input_content.value.trim() === '' || input_category.value === null) {
+  if (input_content.value.trim() === "" || input_category.value === null) {
+    errorMessage.value = "Please enter content and select a category."; // Set error message
     return;
   }
+
   todos.value.push({
     content: input_content.value,
     category: input_category.value,
     done: false,
     createdAt: new Date().getTime(),
   });
-  input_content.value = ''; // Clear the input after adding
-  input_category.value = null; // Reset category
+
+  // Clear inputs and error message after successful addition
+  input_content.value = "";
+  input_category.value = null;
+  errorMessage.value = "";
 };
 
 const removeTodo = (todoToRemove) => {
-  todos.value = todos.value.filter(todo => todo !== todoToRemove);
+  todos.value = todos.value.filter((todo) => todo !== todoToRemove);
 };
 
-watch(todos, (newVal) => {
-  localStorage.setItem('todos', JSON.stringify(newVal));
-}, { deep: true });
+watch(
+  todos,
+  (newVal) => {
+    localStorage.setItem("todos", JSON.stringify(newVal));
+  },
+  { deep: true }
+);
 
 watch(name, (newVal) => {
-  localStorage.setItem('name', newVal);
+  localStorage.setItem("name", newVal);
 });
 
 onMounted(() => {
-  name.value = localStorage.getItem('name') || '';
-  todos.value = JSON.parse(localStorage.getItem('todos')) || [];
+  name.value = localStorage.getItem("name") || "";
+  todos.value = JSON.parse(localStorage.getItem("todos")) || [];
 });
 </script>
 
-
 <template>
+  <main class="app">
+    <section class="greeting">
+      <h2 class="title">
+        Whats up,
+        <input type="text" placeholder="Your name..." v-model="name" />
+      </h2>
+    </section>
 
-<main class="app">
+    <section class="create-todo">
+      <h3>CREATE A TODO</h3>
 
+      <!-- Error message display -->
+      <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
-  <section class="greeting">
-    <h2 class="title">
-      Whats up, <input type="text" placeholder="Your name..." v-model="name">
-    </h2>
+      <form @submit.prevent="addTodo">
+        <h4>Whats on your todo list?</h4>
+        <input
+          type="text"
+          placeholder="e.g make a video"
+          v-model="input_content"
+        />
 
-  </section>
+        <h4>pick a category</h4>
 
- 
-  <section class="create-todo">
-    <h3>CREATE A TODO</h3>
+        <div class="options">
+          <label>
+            <input
+              type="radio"
+              name="category"
+              value="business"
+              v-model="input_category"
+            />
+            <span class="bubble business"></span>
+            <div>Business</div>
+          </label>
 
-    <form @submit.prevent="addTodo">
-      <h4>Whats on your todo list?</h4>
-      <input type="text" placeholder="e.g make a video" v-model="input_content">
+          <label>
+            <input
+              type="radio"
+              name="category"
+              value="personal"
+              v-model="input_category"
+            />
+            <span class="bubble personal"></span>
+            <div>Personal</div>
+          </label>
+        </div>
 
-      <h4>pick a category</h4>
+        <input type="submit" value="Add todo" />
+      </form>
+    </section>
 
-      <div class="options">
+    <section class="todo-list">
+      <h3>TODO LIST</h3>
+      <div class="list" id="todo-list">
+        <div
+          v-for="todo in todos_asc"
+          :class="`todo-item ${todo.done && 'done'}`"
+        >
+          <label>
+            <input type="checkbox" v-model="todo.done" />
+            <span
+              :class="`bubble ${
+                todo.category == 'business' ? 'business' : 'personal'
+              }`"
+            ></span>
+          </label>
 
-        <label>
-          <input type="radio" name="category" value="business" v-model="input_category">
-          <span class="bubble buisness"></span>
-          <div>Buisness</div>
-        </label>
+          <div class="todo-content">
+            <input type="text" v-model="todo.content" />
+          </div>
 
-         <label>
-          <input type="radio" name="category" value="personal" v-model="input_category">
-          <span class="bubble personal"></span>
-          <div>Personal</div>
-        </label>
-
-
-
+          <div class="actions">
+            <button class="delete" @click="removeTodo(todo)">Delete</button>
+          </div>
+        </div>
       </div>
-
-      <input type="submit" value="Add todo  ">
-
-    </form> 
-  </section>
-
-<section class="todo-list">
-			<h3>TODO LIST</h3>
-			<div class="list" id="todo-list">
-
-				<div v-for="todo in todos_asc" :class="`todo-item ${todo.done && 'done'}`">
-					<label>
-						<input type="checkbox" v-model="todo.done" />
-						<span :class="`bubble ${
-							todo.category == 'business' 
-								? 'business' 
-								: 'personal'
-						}`"></span>
-					</label>
-
-					<div class="todo-content">
-						<input type="text" v-model="todo.content" />
-					</div>
-
-					<div class="actions">
-						<button class="delete" @click="removeTodo(todo)">Delete</button>
-					</div>
-				</div>
-
-			</div>
-		</section>
-  
-
-</main>
-
+    </section>
+  </main>
 </template>
 
