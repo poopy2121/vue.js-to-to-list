@@ -5,7 +5,7 @@ const todos = ref([]);
 const name = ref("");
 const input_content = ref("");
 const input_category = ref(null);
-const errorMessage = ref(""); // New ref for error messages
+const errorMessage = ref(""); 
 
 const todos_asc = computed(() =>
   todos.value.sort((a, b) => {
@@ -13,9 +13,14 @@ const todos_asc = computed(() =>
   })
 );
 
+// Computed property to disable the Add Todo button
+const isAddButtonDisabled = computed(() => {
+  return input_content.value.trim() === "" || input_category.value === null;
+});
+
 const addTodo = () => {
   if (input_content.value.trim() === "" || input_category.value === null) {
-    errorMessage.value = "Please enter content and select a category."; // Set error message
+    errorMessage.value = "Please enter content and select a category."; 
     return;
   }
 
@@ -26,7 +31,6 @@ const addTodo = () => {
     createdAt: new Date().getTime(),
   });
 
-  // Clear inputs and error message after successful addition
   input_content.value = "";
   input_category.value = null;
   errorMessage.value = "";
@@ -66,7 +70,6 @@ onMounted(() => {
     <section class="create-todo">
       <h3>CREATE A TODO</h3>
 
-      <!-- Error message display -->
       <p v-if="errorMessage" class="error-message">{{ errorMessage }}</p>
 
       <form @submit.prevent="addTodo">
@@ -103,7 +106,7 @@ onMounted(() => {
           </label>
         </div>
 
-        <input type="submit" value="Add todo" />
+        <input type="submit" value="Add todo" :disabled="isAddButtonDisabled" />
       </form>
     </section>
 
@@ -111,26 +114,29 @@ onMounted(() => {
       <h3>TODO LIST</h3>
       <div class="list" id="todo-list">
         <div
-          v-for="todo in todos_asc"
-          :class="`todo-item ${todo.done && 'done'}`"
-        >
-          <label>
-            <input type="checkbox" v-model="todo.done" />
-            <span
-              :class="`bubble ${
-                todo.category == 'business' ? 'business' : 'personal'
-              }`"
-            ></span>
-          </label>
+  v-for="todo in todos_asc"
+  :key="todo.createdAt"
+  :class="['todo-item', { done: todo.done }]"
+>
+  <label>
+    <input type="checkbox" v-model="todo.done" />
+    <span
+      :class="`bubble ${
+        todo.category === 'business' ? 'business' : 'personal'
+      }`"
+    ></span>
+  </label>
 
-          <div class="todo-content">
-            <input type="text" v-model="todo.content" />
-          </div>
+  <div class="todo-content">
+    <input type="text" v-model="todo.content" :class="{ 'crossed-out': todo.done }" />
+  </div>
 
-          <div class="actions">
-            <button class="delete" @click="removeTodo(todo)">Delete</button>
-          </div>
-        </div>
+  <div class="actions">
+    <button class="delete" @click="removeTodo(todo)">Delete</button>
+  </div>
+</div>
+
+
       </div>
     </section>
   </main>
@@ -158,6 +164,19 @@ onMounted(() => {
 	box-sizing: border-box;
 	font-family: 'montserrat', sans-serif;
 }
+.todo-item .actions .delete {
+  background-color: var(--danger);
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+  color: #FFF;
+  cursor: pointer;
+  transition: 0.2s ease-in-out;
+}
+
+.todo-item .actions .delete:hover {
+  opacity: 0.75;
+}
+
 
 input:not([type="radio"]):not([type="checkbox"]), button {
 	appearance: none;
@@ -178,6 +197,12 @@ section {
 	padding-left: 1.5rem;
 	padding-right: 1.5em;
 }
+
+.crossed-out {
+  text-decoration: line-through;
+  color: var(--grey);
+}
+
 
 h3 {
 	color: var(--dark);
@@ -308,6 +333,12 @@ input:checked ~ .bubble::after {
 	opacity: 0.75;
 }
 
+.create-todo input[type="submit"]:disabled {
+	background-color: #ccc;
+	cursor: not-allowed;
+	opacity: 0.7;
+}
+
 .todo-list .list {
 	margin: 1rem 0;
 } 
@@ -348,35 +379,7 @@ input:checked ~ .bubble::after {
 	border-radius: 0.25rem;
 	color: #FFF;
 	cursor: pointer;
-	transition: 0.2s ease-in-out;
+	transition: 0.2s ease-in
 }
 
-.todo-item .actions button:hover {
-	opacity: 0.75;
-}
-
-.todo-item .actions .edit {
-	margin-right: 0.5rem;
-	background-color: var(--primary);
-}
-
-.todo-item .actions .delete {
-	background-color: var(--danger);
-}
-
-.todo-item.done .todo-content input {
-	text-decoration: line-through;
-	color: var(--grey);
-}
-
-.error-message {
-  color: var(--danger); 
-  font-size: 0.875rem;
-  font-weight: bold;
-  margin-bottom: 1rem;
-  padding: 0.5rem;
-  background-color: rgba(255, 91, 87, 0.1);
-  border: 1px solid var(--danger);
-  border-radius: 0.5rem;
-}
 </style>
