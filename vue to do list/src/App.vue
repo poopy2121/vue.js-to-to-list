@@ -7,8 +7,8 @@ const name = ref(localStorage.getItem("name") || "");
 const input_content = ref("");
 const input_category = ref(null);
 const input_priority = ref("1");
+const input_due_date = ref(null);
 const errorMessage = ref("");
-
 const buttonClickedWhileDisabled = ref(false);
 
 watch(name, (newName) => {
@@ -31,6 +31,7 @@ const addTodo = () => {
     content: input_content.value,
     category: input_category.value,
     priority: parseInt(input_priority.value, 10),
+    dueDate: input_due_date.value,
     done: false,
     createdAt: new Date().getTime(),
   });
@@ -38,8 +39,8 @@ const addTodo = () => {
   input_content.value = "";
   input_category.value = null;
   input_priority.value = "1";
+  input_due_date.value = null;
   errorMessage.value = "";
-
   buttonClickedWhileDisabled.value = false;
 };
 
@@ -52,8 +53,25 @@ const removeTodo = (todoToRemove) => {
 };
 
 watch(todos, (newVal) => localStorage.setItem("todos", JSON.stringify(newVal)), { deep: true });
+
 onMounted(() => {
   todos.value = JSON.parse(localStorage.getItem("todos")) || [];
+
+  // Check for tasks nearing their due date
+  const checkDueDates = () => {
+    const now = new Date().getTime();
+    todos.value.forEach((todo) => {
+      if (todo.dueDate) {
+        const dueDate = new Date(todo.dueDate).getTime();
+        const timeRemaining = dueDate - now;
+        if (!todo.done && timeRemaining < 86400000 && timeRemaining > 0) { // 24 hours or less
+          alert(`Reminder: Task "${todo.content}" is due soon!`);
+        }
+      }
+    });
+  };
+
+  setInterval(checkDueDates, 3600000); // Check every hour
 });
 </script>
 
@@ -93,6 +111,9 @@ onMounted(() => {
           <option value="3">High</option>
         </select>
 
+        <h4>Set Due Date</h4>
+        <input type="date" v-model="input_due_date" class="due-date-select" />
+
         <AddButton
           :inputContent="input_content"
           :inputCategory="input_category"
@@ -119,6 +140,10 @@ onMounted(() => {
             Priority: {{ todo.priority === 3 ? "High" : todo.priority === 2 ? "Medium" : "Low" }}
           </div>
 
+          <div class="due-date" v-if="todo.dueDate">
+            Due Date: {{ new Date(todo.dueDate).toLocaleDateString() }}
+          </div>
+
           <div class="actions">
             <button class="delete" @click="removeTodo(todo)">Delete</button>
           </div>
@@ -129,6 +154,25 @@ onMounted(() => {
 </template>
 
 <style scoped>
+.due-date-select {
+  width: 100%;
+  font-size: 1rem;
+  padding: 0.75rem 1rem;
+  color: var(--dark);
+  background-color: #fff;
+  border: 2px solid var(--grey);
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+.due-date {
+  color: var(--grey);
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+}
+
 .error-message {
   background-color: #ffdddd;
   color: #a33;
